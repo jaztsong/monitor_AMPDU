@@ -42,6 +42,8 @@ class Parse_AMPDU : public WifipcapCallbacks
 {
         private:
                 bool fcs_ok;
+                bool ampdu_last;
+                bool ampdu_has;
                 AP_pool* Pool;
                 clock_t preTime;
         public:
@@ -69,6 +71,7 @@ class Parse_AMPDU : public WifipcapCallbacks
                                 /* cout << t << ":\t" */ 
                                 /*         << hdr->sa << " -> " */ 
                                 /*         << hdr->da << "\t" */ 
+                                /*         << (int)(*( rest-DATA_HDRLEN-4 )) << "\t" */ 
                                 /*         << len << endl; */
 
                                 stringstream ss;
@@ -77,7 +80,7 @@ class Parse_AMPDU : public WifipcapCallbacks
                                 ss.str("");
                                 ss<<hdr->da;
                                 string dst=ss.str();
-                                packet* p=new packet(src,dst,t,len);
+                                packet* p=new packet(src,dst,t,len,ampdu_has,ampdu_last );
                                 Pool->add_packet(p);
                                 Debug("Handle80211DataFromAP: Adding Packet "<<t<<" "
                                         << hdr->sa << " -> " 
@@ -107,6 +110,10 @@ class Parse_AMPDU : public WifipcapCallbacks
                         this->fcs_ok = fcs_ok;
                 }
 
+                void HandleRadiotap(const struct timeval& t, radiotap_hdr *hdr, const u_char *rest, int len) {
+                        this->ampdu_last=hdr->ampdu_last;
+                        this->ampdu_has=hdr->has_ampdu_status;
+                }
                 /* void HandleEthernet(const struct timeval& t, const ether_hdr_t *hdr, const u_char *rest, int len) { */
                 /*         cout << " Ethernet: " << hdr->sa << " -> " << hdr->da << endl; */
                 /* } */
@@ -120,6 +127,15 @@ class Parse_AMPDU : public WifipcapCallbacks
                 /*         } */
                 /* } */
 
+                /* void Handle80211CtrlBLKAck(const struct timeval& t, const ctrl_blk_ack_t *hdr) */
+                /* { */
+                /*         if (!fcs_ok) { */
+                /*                 cout << t<< "  " << "802.11 block ack:\t" */ 
+                /*                         << hdr->ta << "->" */ 
+                /*                         << hdr->ra << endl; */
+                /*         } */
+                /* } */
+
                 void Handle80211MgmtBeacon(const struct timeval& t, const mgmt_header_t *hdr, const mgmt_body_t *body)
                 {
                         if (!fcs_ok) {
@@ -127,7 +143,7 @@ class Parse_AMPDU : public WifipcapCallbacks
                                 /*         << hdr->sa << "\tbeacon\t\"" */ 
                                 /*         << body->ssid.ssid << "\"" << endl; */
                                 stringstream ss;
-                                ss<<hdr->sa;
+                                ss<<hdr->bssid;
                                 string src = ss.str();
                                 ss.str("");
                                 ss<<body->ssid.ssid;

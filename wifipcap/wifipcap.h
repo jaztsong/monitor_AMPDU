@@ -120,6 +120,7 @@ class WifipcapCallbacks {
     virtual void Handle80211CtrlRTS(const struct timeval& t, const ctrl_rts_t *hdr) {}
     virtual void Handle80211CtrlCTS(const struct timeval& t, const ctrl_cts_t *hdr) {}
     virtual void Handle80211CtrlAck(const struct timeval& t, const ctrl_ack_t *hdr) {}
+    virtual void Handle80211CtrlBLKAck(const struct timeval& t, const ctrl_blk_ack_t *hdr) {}
     virtual void Handle80211CtrlCFEnd(const struct timeval& t, const ctrl_end_t *hdr) {}
     virtual void Handle80211CtrlEndAck(const struct timeval& t, const ctrl_end_ack_t *hdr) {}
     

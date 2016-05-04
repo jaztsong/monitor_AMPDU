@@ -56,19 +56,54 @@ void client_stats::AMPDU_map() {
         }
         mAMPDU_map.clear();
         int num=1;
+        bool hiccup=false;//It is used to mitigate the difference between AP measurement and Client.
         timeval pre_t= mlist[0]->time;
         for(deque<packet*>::iterator it=mlist.begin();it!=mlist.end();++it){
                 Debug("AMPDU_map: packet "<<( *it )->time<<" "<<( *it )->len<<" size: "<<mlist.size());
                 if(( *it )->len > PS_THRE){
-                        Debug("AMPDU_map: time cmp "<<( *it )->time<<" - "<<pre_t<<" = "<<( ( *it )->time - pre_t ));
-                        if(( ( *it )->time - pre_t )<GAP_MPDU && ( *it )->time - pre_t>0){
-                                num++;
-                        }
-                        else{
-                                Debug("AMPDU_map: add bundle "<<( *it )->time<<"  "<<num);
-                                mAMPDU_map.insert(pair<packet*,int>(*it,num));
-                                Debug("AMPDU_map: size "<<mAMPDU_map.size());
-                                num=1;
+                        if(( *it )->time - pre_t>0){
+                                Debug("AMPDU_map: time cmp "<<(*it)->ampdu_has<<"\t"<<(*it)->ampdu_last<<"\t"<<( *it )->time<<" - "<<pre_t<<" = "<<( ( *it )->time - pre_t ));
+                                if((*it)->ampdu_has){
+                                        if((*it)->ampdu_last){
+                                                num++;
+                                                Debug("AMPDU_map: add bundle "<<( *it )->time<<"  "<<num);
+                                                mAMPDU_map.insert(pair<packet*,int>(*it,num));
+                                                Debug("AMPDU_map: size "<<mAMPDU_map.size());
+                                                hiccup = false;
+                                                num=1;
+                                        }
+                                        else{
+                                                if(((*it)->time - pre_t)<GAP_MPDU || !hiccup){
+                                                        num++;
+                                                        if(!(((*it)->time - pre_t)<GAP_MPDU))
+                                                                hiccup = true;
+                                                }
+                                                else{
+                                                        num++;
+                                                        Debug("AMPDU_map: add bundle "<<( *it )->time<<"  "<<num);
+                                                        mAMPDU_map.insert(pair<packet*,int>(*it,num));
+                                                        Debug("AMPDU_map: size "<<mAMPDU_map.size());
+                                                        hiccup = false;
+                                                        num=1;
+                                                }
+                                        }
+                                }
+                                else{
+
+                                                if(((*it)->time - pre_t)<GAP_MPDU || !hiccup){
+                                                        num++;
+                                                        if(!(((*it)->time - pre_t)<GAP_MPDU))
+                                                                hiccup = true;
+                                                }
+                                                else{
+                                                        num++;
+                                                        Debug("AMPDU_map: add bundle "<<( *it )->time<<"  "<<num);
+                                                        mAMPDU_map.insert(pair<packet*,int>(*it,num));
+                                                        Debug("AMPDU_map: size "<<mAMPDU_map.size());
+                                                        hiccup = false;
+                                                        num=1;
+                                                }
+                                }
                         }
                 }
                 pre_t = ( *it )->time;
@@ -88,12 +123,15 @@ void client_stats::getAMPDU_stats(){
         if(mAMPDU_map.empty()){
                 mAver = 0.0;
                 mSTD = 0.0;
+                mMax = 0;
+                mNum = 0;
                 Debug("***EMPTY AMPDU_map list***");
                 return ;
         }
-        int pre_t;
+        int pre_t,max=0;
         vector<int> v;
         vector<double> fv;
+        mNum = 0;
         for(map<packet*,int>::iterator it=mAMPDU_map.begin(); it != mAMPDU_map.end();++it){
                 if( it ==  mAMPDU_map.begin()){
                         v.clear();
@@ -102,6 +140,10 @@ void client_stats::getAMPDU_stats(){
                 }
                 else{
                         Debug("getAMPDU_stats: rounded time "<<pre_t<<"\t"<< time_index(it->first->time)<<"\t"<<(it->first )->time );
+                        if(it->second > max)
+                                max=it->second;
+                        mNum += it->second;
+
                         if( pre_t !=  time_index(it->first->time)){
                                 Debug("getAMPDU_stats: one segment "<<average(v));
                                 fv.push_back(average(v));
@@ -118,6 +160,7 @@ void client_stats::getAMPDU_stats(){
         fv.push_back(average(v));
         mAver=average(fv);
         mSTD=deviation(fv,mAver);
+        mMax=max;
 }
 
 double client_stats::getAver(){
@@ -125,6 +168,12 @@ double client_stats::getAver(){
 }
 double client_stats::getSTD(){
         return mSTD;
+}
+int client_stats::getMax(){
+        return mMax;
+}
+int client_stats::getNum(){
+        return mNum;
 }
 timeval client_stats::getUpTime(){
         return mClientUpTime;
@@ -170,7 +219,7 @@ void AP_stats::dump_report(){
         printf("%s(%s) ",mMac_address.c_str(),mSSID.c_str());
         for(map<string, client_stats*>::iterator it=mClients.begin();it!=mClients.end();++it){
                 it->second->getAMPDU_stats();
-                printf("%s:%.3f ",( it->first ).c_str(),it->second->getAver());
+                printf("%s:(%.3f %.3f %d %d) ",( it->first ).c_str(),it->second->getAver(),it->second->getSTD(),it->second->getMax(),it->second->getNum());
         }
         printf("\n");
 }

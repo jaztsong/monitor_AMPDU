@@ -36,6 +36,8 @@
 #define	IEEE802_11_SEQ_LEN		2
 #define	IEEE802_11_IV_LEN		3
 #define	IEEE802_11_KID_LEN		1
+#define	IEEE802_11_BA_CTRL_LEN		2
+#define	IEEE802_11_BA_INFO_LEN		10
 
 /* Frame check sequence length. */
 #define	IEEE802_11_FCS_LEN		4
@@ -80,6 +82,8 @@
 #define	CTRL_RTS	0xB
 #define	CTRL_CTS	0xC
 #define	CTRL_ACK	0xD
+#define	CTRL_BLK_ACK	0x9
+#define	CTRL_BLK_ACK_REQ	0x8
 #define	CTRL_CF_END	0xE
 #define	CTRL_END_ACK	0xF
 
@@ -268,6 +272,19 @@ struct ctrl_ack_t {
 };
 
 #define	CTRL_ACK_HDRLEN	(IEEE802_11_FC_LEN+IEEE802_11_DUR_LEN+IEEE802_11_RA_LEN)
+
+struct ctrl_blk_ack_t {
+    u_int16_t fc;
+    u_int16_t duration;
+    MAC ra;
+    MAC ta;
+    u_int8_t ba_ctrl[2];
+    u_int8_t ba_info[10];
+    u_int8_t fcs[4];
+};
+
+#define	CTRL_BLK_ACK_HDRLEN	(IEEE802_11_FC_LEN+IEEE802_11_DUR_LEN+IEEE802_11_RA_LEN+\
+                IEEE802_11_TA_LEN + IEEE802_11_BA_CTRL_LEN + IEEE802_11_BA_INFO_LEN)
 
 struct ctrl_ps_poll_t {
     u_int16_t fc;

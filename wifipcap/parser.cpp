@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 
 using namespace std;
 
@@ -120,6 +122,8 @@ static u_int8_t extract_header_length(u_int16_t fc)
 	    return CTRL_RTS_HDRLEN;
 	case CTRL_CTS:
 	    return CTRL_CTS_HDRLEN;
+	case CTRL_BLK_ACK:
+	    return CTRL_BLK_ACK_HDRLEN;
 	case CTRL_ACK:
 	    return CTRL_ACK_HDRLEN;
 	case CTRL_CF_END:
@@ -1504,6 +1508,16 @@ int decode_ctrl_frame(const struct timeval& t, WifipcapCallbacks *cbs, const u_c
 	cbs->Handle80211CtrlAck(t, &hdr);
 	break;
     }
+    case CTRL_BLK_ACK: {
+	ctrl_blk_ack_t hdr;
+	hdr.fc = fc;
+	hdr.duration = du;
+	hdr.ra = ether2MAC(ptr+4);
+	hdr.ta = ether2MAC(ptr+10);
+	cbs->Handle80211(t, fc, MAC::null, MAC::null, hdr.ra, hdr.ta, ptr, len, fcs_ok);
+	cbs->Handle80211CtrlBLKAck(t, &hdr);
+	break;
+    }
     case CTRL_CF_END: {
 	ctrl_end_t hdr;
 	hdr.fc = fc;
@@ -1679,8 +1693,15 @@ print_radiotap_field(struct cpack_state *s, u_int32_t bit, int *pad, radiotap_hd
 	case IEEE80211_RADIOTAP_DATA_RETRIES:
 	    rc = cpack_uint8(s, &u.u8);
 	    break;
-	case IEEE80211_RADIOTAP_HT_INFO:
+	case IEEE80211_RADIOTAP_MCS:
 	    rc = cpack_uint16(s, &u.u16);
+		if (rc != 0)
+			break;
+		rc = cpack_uint8(s, &u2.u8);
+	    break;
+	case IEEE80211_RADIOTAP_AMPDU_STATUS:
+	    rc = cpack_uint64(s, &u.u64);
+        /* printf("find AMPDU_STATUS present flag\n"); */
 	    break;
 	default:
 		/* this bit indicates a field whose
@@ -1700,7 +1721,7 @@ print_radiotap_field(struct cpack_state *s, u_int32_t bit, int *pad, radiotap_hd
 
 	switch (bit) {
 	case IEEE80211_RADIOTAP_CHANNEL:
-	    //printf("%u MHz ", u.u16);
+	    /* printf("%u MHz ", u.u16); */
 	    if (u2.u16 != 0)
 		//printf("(0x%04x) ", u2.u16);
 		hdr->has_channel = true;
@@ -1800,6 +1821,18 @@ print_radiotap_field(struct cpack_state *s, u_int32_t bit, int *pad, radiotap_hd
 	case IEEE80211_RADIOTAP_DATA_RETRIES:
 	    hdr->has_data_retries = true;
 	    hdr->data_retries = u.u8;
+	    break;
+	case IEEE80211_RADIOTAP_AMPDU_STATUS:
+	    hdr->has_ampdu_status = true;
+	    hdr->ampdu_status = (u.u64>>32) & 0xffff;
+	    hdr->ampdu_ref = (u.u64) & 0xffff;
+        if((u.u64>>35) & 0x1){
+                hdr->ampdu_last = true ;
+        }
+        else{
+                hdr->ampdu_last = false ;
+        }
+	    /* printf("last %d status 0x%"PRIx32"\n", int( hdr->ampdu_last ),hdr->ampdu_status); */
 	    break;
 	}
 	return 0;

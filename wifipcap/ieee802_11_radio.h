@@ -167,7 +167,9 @@ struct ieee80211_radiotap_header {
  *
  *	FCS from frame in network byte order.
  *
- * IEEE80211_RADIOTAP_HT_INFO           	u_int32_t       bool
+ * IEEE80211_RADIOTAP_MCS           	       bool
+ *
+ * IEEE80211_RADIOTAP_AMPDU_STATUS                 bool
  *
  *	if the HT (high performance) supported.
  */
@@ -190,7 +192,8 @@ enum ieee80211_radiotap_type {
         IEEE80211_RADIOTAP_TX_FLAGS = 15,
 	IEEE80211_RADIOTAP_RTS_RETRIES = 16,
         IEEE80211_RADIOTAP_DATA_RETRIES = 17,
-        IEEE80211_RADIOTAP_HT_INFO = 19,
+        IEEE80211_RADIOTAP_MCS = 19,
+        IEEE80211_RADIOTAP_AMPDU_STATUS = 20,
 	IEEE80211_RADIOTAP_EXT = 31
 };
 

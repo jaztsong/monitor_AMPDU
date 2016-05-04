@@ -17,7 +17,7 @@ using namespace std;
 #define GAP_MPDU 80
 #define CLIENT_WIN 3000000
 #define AMPDU_WIN 0.5f
-#define PS_THRE 1340
+#define PS_THRE 65
 #define EXPIRE_TIME 3000000
 #define REPORT_FREQ 1.0f
 
@@ -28,7 +28,9 @@ struct packet{
         string dst;
         timeval time;
         int len;
-        packet(string s,string d,timeval t,int l):src(s),dst(d),time(t),len(l){};
+        bool ampdu_has;
+        bool ampdu_last;
+        packet(string s,string d,timeval t,int l,bool has, bool last):src(s),dst(d),time(t),len(l),ampdu_has(has),ampdu_last(last){};
 };
 
 class client_stats {
@@ -38,6 +40,8 @@ class client_stats {
                 void AMPDU_map();
                 double mAver;
                 double mSTD;
+                int mMax;
+                int mNum;
                 string mMac_address;
                 timeval mClientUpTime;
                 AP_pool* mPool;
@@ -52,6 +56,8 @@ class client_stats {
                 void updateList();
                 double getAver();
                 double getSTD();
+                int getMax();
+                int getNum();
                 timeval getUpTime();
 
 };

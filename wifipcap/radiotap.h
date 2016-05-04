@@ -63,6 +63,11 @@ struct radiotap_hdr {
 
     bool has_data_retries;
     int data_retries;
+
+    bool has_ampdu_status;
+    u_int32_t ampdu_status;
+    u_int32_t ampdu_ref;
+    bool ampdu_last;
 } _PACKED_;
 #ifdef _WIN32
 #pragma pack(pop)
