@@ -239,6 +239,9 @@ AP_pool* AP_stats::getPool(){
 void AP_stats::setSSID(string ssid){
         mSSID = ssid;
 }
+map<string, client_stats*>* AP_stats::getClients(){
+        return &mClients;
+}
 ///////////////////////////////////////////////////////////////////////////
 /////////////////////AP_pool/////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
@@ -292,4 +295,21 @@ void AP_pool::report(){
         for(map<string, AP_stats*>::iterator it=mAPs.begin();it!=mAPs.end();++it){
                 it->second->dump_report();
         }
+}
+void AP_pool::dump_stat(){
+        int N_AP=0,N_Client=0;
+        double sum=0.0;
+        N_AP = mAPs.size();
+        map<string, client_stats*>* Clients_prt;
+        for(map<string, AP_stats*>::iterator it=mAPs.begin();it!=mAPs.end();++it){
+                /* it->second->dump_report(); */
+                Clients_prt = it->second->getClients();
+                N_Client += (*Clients_prt).size();
+                for(map<string, client_stats*>::iterator iit=( *Clients_prt ).begin();iit!=( *Clients_prt ).end();++iit){
+                        iit->second->getAMPDU_stats();
+                        sum += iit->second->getAver();
+                }
+                 
+        }
+        printf("%d.%06d %d %d %f\n",mUpTime.tv_sec,mUpTime.tv_usec,N_AP,N_Client,sum);
 }

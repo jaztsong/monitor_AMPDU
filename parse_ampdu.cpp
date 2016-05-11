@@ -90,8 +90,9 @@ class Parse_AMPDU : public WifipcapCallbacks
                                 secondsPassed = (t.tv_sec - preTime);
                                 if(secondsPassed >= REPORT_FREQ)
                                 {
-                                        cout<<endl;
-                                        Pool->report();
+                                        /* cout<<endl; */
+                                        /* Pool->report(); */
+                                        Pool->dump_stat();
                                         preTime=t.tv_sec;
                                 }
                         }

@@ -17,7 +17,7 @@ using namespace std;
 #define GAP_MPDU 80
 #define CLIENT_WIN 3000000
 #define AMPDU_WIN 0.5f
-#define PS_THRE 65
+#define PS_THRE 1300
 #define EXPIRE_TIME 3000000
 #define REPORT_FREQ 1.0f
 
@@ -78,6 +78,7 @@ class AP_stats {
                 void updateClients();
                 timeval getUpTime();
                 void dump_report();
+                map<string, client_stats*>* getClients();
                         
 };
 
@@ -96,5 +97,6 @@ class AP_pool {
                 void add_packet(packet* p);
                 void updateAPs();
                 void report();
+                void dump_stat();
                         
 };
